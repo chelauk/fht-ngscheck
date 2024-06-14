@@ -4,12 +4,22 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { FASTQC                 } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
+include { BAM_NGSCHECKMATE       } from '../subworkflows/nf-core/bam_ngscheckmate/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_ngscheck_pipeline'
+
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    INITITIATE FILE CHANNELS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+//ch_fasta   = params.fasta   ? Channel.fromPath(params.fasta).collect()   : Channel.empty()
+//ch_snp_bed = params.snp_bed ? Channel.fromPath(params.snp_bed).collect() : Channel.empty()
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -21,24 +31,31 @@ workflow NGSCHECK {
 
     take:
     ch_samplesheet // channel: samplesheet read in from --input
+    ch_fasta       // channel: [ val(meta2), fasta ]
+    ch_snp_bed     // channel: [ val(meta3), snp_bed ]
 
     main:
 
+    ch_samplesheet.view{"ch_samplesheet $it"}
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
 
     //
-    // MODULE: Run FastQC
+    // SUBWORKFLOW  BAM_NGSCHECKMATE
     //
-    FASTQC (
-        ch_samplesheet
+
+    BAM_NGSCHECKMATE (
+       ch_samplesheet,
+       ch_snp_bed,
+       ch_fasta
     )
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]})
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+
+    ch_versions.mix(BAM_NGSCHECKMATE.out.versions)
 
     //
     // Collate and save software versions
     //
+
     softwareVersionsToYAML(ch_versions)
         .collectFile(
             storeDir: "${params.outdir}/pipeline_info",

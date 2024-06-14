@@ -30,8 +30,10 @@ include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_ngsc
 // TODO nf-core: Remove this line if you don't need a FASTA file
 //   This is an example of how to use getGenomeAttribute() to fetch parameters
 //   from igenomes.config using `--genome`
-params.fasta = getGenomeAttribute('fasta')
-
+params.fasta   = getGenomeAttribute('fasta')
+params.snp_bed = getGenomeAttribute('snp_bed')
+ch_fasta   = params.fasta   ? Channel.fromPath(params.fasta).map{ it -> [ [id:it.baseName], it ] }.collect() : Channel.empty()
+ch_snp_bed = params.snp_bed ? Channel.fromPath(params.snp_bed).map{ it -> [ [id:it.baseName], it ] }.collect() : Channel.empty()
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     NAMED WORKFLOWS FOR PIPELINE
@@ -45,6 +47,8 @@ workflow FHT_NGSCHECK {
 
     take:
     samplesheet // channel: samplesheet read in from --input
+    ch_fasta
+    ch_snp_bed
 
     main:
 
@@ -52,7 +56,9 @@ workflow FHT_NGSCHECK {
     // WORKFLOW: Run pipeline
     //
     NGSCHECK (
-        samplesheet
+        samplesheet,
+        ch_fasta,
+        ch_snp_bed
     )
 
     emit:
@@ -68,7 +74,6 @@ workflow FHT_NGSCHECK {
 workflow {
 
     main:
-
     //
     // SUBWORKFLOW: Run initialisation tasks
     //
@@ -85,8 +90,11 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
+
     FHT_NGSCHECK (
-        PIPELINE_INITIALISATION.out.samplesheet
+        PIPELINE_INITIALISATION.out.samplesheet,
+        ch_fasta,
+        ch_snp_bed
     )
 
     //

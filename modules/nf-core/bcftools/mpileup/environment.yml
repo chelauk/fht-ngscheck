@@ -1,7 +1,7 @@
-name: fastqc
+name: bcftools_mpileup
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - bioconda::fastqc=0.12.1
+  - bioconda::bcftools=1.20
