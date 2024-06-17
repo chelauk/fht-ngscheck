@@ -11,6 +11,9 @@ workflow BAM_NGSCHECKMATE {
     main:
 
     ch_versions = Channel.empty()
+    //need only the bam
+    ch_input = ch_input
+                   .map{ meta, files -> [ meta, files[0]] }
 
     ch_input_bed = ch_input.combine(ch_snp_bed.collect())
                         // do something to combine the metas?
