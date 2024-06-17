@@ -36,7 +36,6 @@ workflow NGSCHECK {
 
     main:
 
-    ch_samplesheet.view{"ch_samplesheet $it"}
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
 

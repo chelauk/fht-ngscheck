@@ -82,14 +82,11 @@ workflow PIPELINE_INITIALISATION {
     //
     Channel
         .fromSamplesheet("input")
-        .view{"this is what it looks like fromSampleSheet $it"}
         .map {
             meta, bam, bai ->
                     [ meta, [ bam, bai ] ]
         }
-        .view{"this is what it looks like after map $it"}
         .groupTuple()
-        .view{"this is what it looks like after groupTuple $it"}
         .map {
             validateInputSamplesheet(it)
         }
